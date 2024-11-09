@@ -49,19 +49,6 @@ class ImageViewer(tk.Frame):
 
             self.image = Image.fromarray(image)
 
-        if ".jpg" in filepath:
-            self.image = Image.open(filepath)
-
-        if ".MP4" in filepath:
-            cap = cv2.VideoCapture(filepath)
-            cap.set(cv2.CAP_PROP_POS_FRAMES, 300)
-            ret, frame = cap.read()
-            cap.release()
-            if ret:
-                self.image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            else:
-                print("Frame couldn't be opened")
-
         self.img_pos = (0, 0)
         self.fit_image_to_window()
         self.update_image()
