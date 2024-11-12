@@ -39,7 +39,7 @@ class FileFunctions:
 
         root = tk.Tk()
         root.withdraw()
-        filename = filedialog.askopenfilename(title = purpose)
+        filename = filedialog.askopenfilename(title = purpose, filetypes=[("All files", "*.*")])
 
         return filename
     
