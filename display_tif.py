@@ -7,7 +7,6 @@ import tkinter as tk
 from tkinter import ttk, filedialog
 import numpy as np
 from osgeo import gdal
-import cv2
 from PIL import Image, ImageTk
 
 class ImageViewer(tk.Frame):
