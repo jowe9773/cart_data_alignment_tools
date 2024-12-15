@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import plotly
+import plotly.graph_objects as go
 from functions import FileFunctions
 
 
@@ -15,49 +15,45 @@ file_path = ff.load_fn("Select your csv file", [("CSV files", "*.CSV"), ("All Fi
 df = pd.read_csv(file_path, skiprows=29, usecols=[0, 2, 3, 5], header=None)
 df.columns = ['Dataset', 'X', 'Y', 'Z']  # Rename columns for clarity
 
+#Append data to df from the channel scan
+file_path_channel = ff.load_fn("Select your csv file", [("CSV files", "*.CSV"), ("All Files", "*.*")])
+df_channel = pd.read_csv(file_path_channel, skiprows=29, usecols=[2, 3, 5], header=None)
+df_channel.columns = ['X', 'Y', 'Z']  # Rename columns for clarity
+df_channel["Dataset"] = 6
+
 # Display the first few rows to verify
 print(df.head())
+print(df_channel.head())
 
-# Create a 3D plot
-fig = plt.figure(figsize=(10, 8))  # Adjust the figsize (width, height)
-ax = fig.add_subplot(111, projection='3d')
+df_combined = pd.concat([df, df_channel], ignore_index=True)
 
-# Group by the 'Dataset' column and plot each group
-for dataset, group in df.groupby('Dataset'):
-    ax.plot(group['X'], group['Y'], group['Z'], label=f'Dataset {dataset}')
 
-# Customize the plot
-ax.set_xlabel('X-axis')
-ax.set_ylabel('Y-axis')
-ax.set_zlabel('Z-axis')
-ax.set_title('3D Line Graph of Datasets')
-ax.legend()
+# Create a 3D scatter plot
+fig = go.Figure()
 
-# Function to adjust axis aspect ratio
-def set_3d_aspect(ax, aspect=(1, 1, 1)):
-    """Set 3D plot aspect ratio."""
-    x_limits = ax.get_xlim()
-    y_limits = ax.get_ylim()
-    z_limits = ax.get_zlim()
-    
-    # Calculate the range of each axis
-    x_range = x_limits[1] - x_limits[0]
-    y_range = y_limits[1] - y_limits[0]
-    z_range = z_limits[1] - z_limits[0]
-    
-    # Apply aspect scaling
-    x_center = (x_limits[0] + x_limits[1]) / 2
-    y_center = (y_limits[0] + y_limits[1]) / 2
-    z_center = (z_limits[0] + z_limits[1]) / 2
-    
-    max_range = max(x_range * aspect[0], y_range * aspect[1], z_range * aspect[2])
+# Plot each dataset
+for dataset, group in df_combined.groupby('Dataset'):
+    fig.add_trace(go.Scatter3d(
+        x=group['X'],
+        y=group['Y'],
+        z=group['Z'],
+        mode='lines+markers',
+        name=f'Dataset {dataset}'
+    ))
 
-    ax.set_xlim(x_center - max_range / 2, x_center + max_range / 2)
-    ax.set_ylim(y_center - max_range / 2, y_center + max_range / 2)
-    ax.set_zlim(z_center - max_range / 2, z_center + max_range / 2)
+# Calculate the ranges of each axis
+x_range = [df_combined['X'].min(), df_combined['X'].max()]
+y_range = [df_combined['Y'].min(), df_combined['Y'].max()]
+z_range = [df_combined['Z'].min(), df_combined['Z'].max()]
 
-# Set custom aspect ratio (e.g., 2x width, 1x height, 1x depth)
-set_3d_aspect(ax, aspect=(1, 1, 1))
+# Set the axis ranges to be the same proportionally
+fig.update_layout(
+    scene=dict(
+        xaxis=dict(range=x_range),
+        yaxis=dict(range=y_range),
+        zaxis=dict(range=z_range)
+    ),
+    margin=dict(l=0, r=0, b=0, t=0),  # Optional: remove margins for tight layout
+)
 
-# Show the plot
-plt.show()
+fig.show()
