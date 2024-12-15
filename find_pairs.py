@@ -1,83 +1,43 @@
-#This function will find pairs that represent the same feature in the two scans
-
-#load neccesary packages and modules
+# Import necessary libraries
 import geopandas as gpd
-import matplotlib.pyplot as plt
+import os
 from scipy.spatial.distance import cdist
-import numpy as np
+from osgeo import gdal
 from pprint import pprint
-from sklearn.cluster import DBSCAN 
 from functions import FileFunctions
+from functions import FindPairsFunctions
 
+# Initialize FileFunctions for file selection
 ff = FileFunctions()
+fpf = FindPairsFunctions()
 
-scan1 = ff.load_fn("select reference scan")
-scan2 = ff.load_fn("select a second scan")
+# Step 1a: Choose files
+scan1 = ff.load_fn("Select reference scan", [("Centroid Files", "*_centroids.shp")])
+scan2 = ff.load_fn("Select a second scan", [("Centroid Files", "*_centroids.shp")])
 
-shapefile_1 = gpd.read_file(scan1)
+# Step 1b: Set up filename parts for future use
+directory1, filename1 = os.path.split(scan1)
+basename1 = filename1.split("_centroids")[0]
 
-shapefile_2 = gpd.read_file(scan2)
+directory2, filename2 = os.path.split(scan2)
+basename2 = filename2.split("_centroids")[0]
 
-# Ensure both shapefiles use the same CRS (Coordinate Reference System)
-shapefile_1 = shapefile_1.to_crs(shapefile_2.crs)
+# Step 1c: Choose a directory to look for GeoTIFF files
+geotif_location = ff.load_dn("Choose a directory with GeoTIFF files")
+geotif2 = geotif_location+ "/" + basename2 + ".tif"
 
-# Extract the points (coordinates) from both shapefiles
-points_1 = shapefile_1.geometry.apply(lambda x: (x.x, x.y)).tolist()
-points_2 = shapefile_2.geometry.apply(lambda x: (x.x, x.y)).tolist()
-
-# Calculate pairwise distances between points from the two shapefiles
-distances = cdist(points_1, points_2)
-
-pprint(distances)
-
-# Find the closest point pairs (smallest distances)
-closest_pairs = []
-for i in range(len(points_1)):
-    closest_index = distances[i].argmin()  # Index of the closest point in shapefile_2
-    closest_pairs.append((shapefile_1.iloc[i], shapefile_2.iloc[closest_index]))
-
-# Prepare lists to store the x and y offsets
-x_offsets = []
-y_offsets = []
+#Step 1d: Choose an output location
+output_location = ff.load_dn("Choose output directory")
+output = output_location + "/" + basename2 + ".tif"
+print(output)
 
 
-# Calculate the offsets (x_offset and y_offset) for each pair and store them
-for pair in closest_pairs:
-    point1 = pair[0].geometry
-    point2 = pair[1].geometry
-    
-    # Calculate the offset (difference) in x and y coordinates
-    x_offset = point2.x - point1.x
-    y_offset = point2.y - point1.y
-    
-    x_offsets.append(x_offset)
-    y_offsets.append(y_offset)
+#Step 2: Find pairs
+pairs = fpf.find_closest_pairs(scan1, scan2)
+pprint(pairs)
 
-# Combine the offsets into a 2D array for clustering
-offsets = np.array(list(zip(x_offsets, y_offsets)))
+#Step 3: Convert Pairs to gdal GCPS
+gcps = fpf.pairs_to_gcps(pairs, geotif2)
 
-# Apply DBSCAN clustering to the offsets
-dbscan = DBSCAN(eps=2, min_samples=1000)  # eps is the distance threshold, min_samples is the minimum points to form a cluster
-labels_dbscan = dbscan.fit_predict(offsets)
-
-# Visualize the DBSCAN clusters
-plt.figure(figsize=(8, 6))
-
-# Plot each point with the cluster label as color
-unique_labels = set(labels_dbscan)
-for label in unique_labels:
-    if label == -1:  # Noise points are labeled as -1
-        plt.scatter(offsets[labels_dbscan == label][:, 0], offsets[labels_dbscan == label][:, 1], color='gray', label='Noise')
-    else:
-        plt.scatter(offsets[labels_dbscan == label][:, 0], offsets[labels_dbscan == label][:, 1], label=f'Cluster {label+1}')
-
-# Set labels and title
-plt.xlabel('X Offset')
-plt.ylabel('Y Offset')
-plt.title('Grouped Offsets by Clustering (DBSCAN)')
-
-# Show legend
-plt.legend()
-
-# Show the plot
-plt.show()
+#Step 4: Tranform scan2 using gcps
+fpf.transform_scan2(geotif2, gcps, output)  
