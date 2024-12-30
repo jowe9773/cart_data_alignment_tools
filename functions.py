@@ -1,6 +1,7 @@
 #import packages and modules
 import tkinter as tk
 from tkinter import filedialog
+from matplotlib import pyplot as plt
 import numpy as np
 import rasterio
 from rasterio.enums import Resampling
@@ -45,6 +46,28 @@ class FileFunctions:
         filename = filedialog.askopenfilename(title = purpose, filetypes = types)
 
         return filename
+    
+    def extract_info_from_filename(self, filepath):
+        directory, filename = os.path.split(filepath)
+        basename = filename.split("_centroids")[0]
+        exp = basename.split("_")[0] + "_" + basename.split("_")[1]
+
+        print(directory)
+        print("Basename: ", basename)
+        print("Experiment: ", exp)
+
+        return directory, basename, exp
+    
+    def find_files_with_string(self, root_dir, search_string, filetype):
+        files = []
+        for dirpath, _, filenames in os.walk(root_dir):
+            for file in filenames:
+                if search_string in file and file.endswith(filetype):
+                    files.append(os.path.join(dirpath, file))
+        return files
+    
+
+
     
 class FindCentersFunctions:
     def __init__(self):
@@ -146,6 +169,79 @@ class FindPairsFunctions:
             closest_pairs.append((points_1[i], points_2[closest_index]))
 
         return closest_pairs
+    
+    def calculate_offsets(self, closest_pairs):
+        # Prepare lists to store the x and y offsets
+        x_offsets = []
+        y_offsets = []
+
+
+        # Calculate the offsets (x_offset and y_offset) for each pair and store them
+        for pair in closest_pairs:
+            point1 = pair[0]
+            point2 = pair[1]
+
+            # Calculate the offset (difference) in x and y coordinates
+            x_offset = point2[0] - point1[0]
+            y_offset = point2[1] - point1[1]
+
+            x_offsets.append(x_offset)
+            y_offsets.append(y_offset)
+
+        # Combine the offsets into a 2D array
+        offsets = np.array(list(zip(x_offsets, y_offsets)))
+
+        return offsets
+
+    def select_true_offsets(self, offsets, low_threshold = 0, high_threshold = 30):
+        
+        # Use boolean indexing to filter pairs
+        filtered_offsets = offsets[(np.abs(offsets[:, 0]) <= high_threshold) & (np.abs(offsets[:, 1]) <= high_threshold) & (np.abs(offsets[:, 0]) >= low_threshold) & (np.abs(offsets[:, 1]) >= low_threshold)]
+
+        return filtered_offsets
+    
+    def display_offsets(self, offsets):
+
+        # Split back into x and y lists
+        x_values = offsets[:, 0].tolist()  # First column (x values)
+        y_values = offsets[:, 1].tolist()  # Second column (y values)
+
+        # Visualize the offsets
+        plt.figure(figsize=(16, 12))
+        plt.scatter(x_values, y_values)
+
+        # Set labels and title
+        plt.xlabel('X Offset')
+        plt.ylabel('Y Offset')
+        plt.title('Grouped Offsets by Clustering (DBSCAN)')
+
+        # Show legend
+        plt.legend()
+
+        # Show the plot
+        plt.show()
+
+    def compute_median_direction_and_distance(self, offsets):
+        x_values = offsets[:, 0].tolist()  # First column (x values)
+        y_values = offsets[:, 1].tolist()  # Second column (y values)
+
+        # Step 1: Calculate the Euclidean distances for each (x, y) pair
+        distances = np.sqrt(np.array(x_values)**2 + np.array(y_values)**2)
+        
+        # Step 2: Calculate the angles (in radians) for each (x, y) pair
+        angles = np.arctan2(y_values, x_values)
+        
+        # Step 3: Convert angles to degrees
+        angles_degrees = np.degrees(angles)
+        
+        # Step 4: Compute the median angle (direction) in degrees
+        median_angle = np.median(angles_degrees)
+        
+        # Step 5: Compute the median distance
+        median_distance = np.median(distances)
+        
+        return median_angle, median_distance
+
     
     def pairs_to_gcps(self, point_pairs, geotiff_location):
         # Function to convert real-world coordinates to pixel coordinates

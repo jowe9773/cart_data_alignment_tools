@@ -17,6 +17,7 @@ df_channel.columns = ['X', 'Y', 'Z']
 df_channel["Dataset"] = 6
 
 df_combined = pd.concat([df, df_channel], ignore_index=True)
+df_combined['Y'] *= -1
 
 # Load tif file
 geotiff_path = ff.load_fn("Choose a tif file")
