@@ -16,8 +16,21 @@ fpf = FindPairsFunctions()
 
 
 # Step 2: Select Summary File and Directory containing centroid files
+summary_file = ff.load_fn("Select a summary file with experiment metadata")
+
+main_directory = ff.load_dn("Choose a directory with all of the centroid filed within it")
 
 # Step 3: Load in summary information
+metadata = pd.read_csv(summary_file, usecols= [0,1,2,3])
+pprint(metadata)
+
+# Filter out rows with Flood type 'x' or NaN values in Flood type or Experiment Name
+filtered_df = metadata[~metadata["Flood type"].isin(['x']) & ~metadata["Forest Stand Density"].isin([1.5]) & metadata["Experiment Name"].notna()]
+
+# Get unique Experiment Names and sort them alphabetically
+experiment_names = sorted(filtered_df["Experiment Name"].unique())
+pprint(experiment_names)
+
 
 # Step 4: Parse directory to get all centroid files
 
