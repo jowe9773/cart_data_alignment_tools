@@ -3,6 +3,17 @@
 #The following code will report offsets between different topo scans related to each experiment to find which scans need realignment and which scans can be used as is
 
 # Step 1: Load neccesary modules and packages
+import pandas as pd
+import os
+from scipy.spatial.distance import cdist
+from osgeo import gdal
+from pprint import pprint
+from collections import defaultdict
+from functions import FileFunctions, FindPairsFunctions
+
+ff = FileFunctions()
+fpf = FindPairsFunctions()
+
 
 # Step 2: Select Summary File and Directory containing centroid files
 
