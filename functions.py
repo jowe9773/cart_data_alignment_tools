@@ -241,7 +241,14 @@ class FindPairsFunctions:
         median_distance = np.median(distances)
         
         return median_angle, median_distance
+    
+    def find_median_offset_from_scans(self, scan1, scan2):
+        pairs = self.find_closest_pairs(scan1, scan2)
+        offsets = self.calculate_offsets(pairs)
+        true_offsets = self.select_true_offsets(offsets)
+        median_direction, median_distance = self.compute_median_direction_and_distance(true_offsets)
 
+        return median_direction, median_distance
     
     def pairs_to_gcps(self, point_pairs, geotiff_location):
         # Function to convert real-world coordinates to pixel coordinates
