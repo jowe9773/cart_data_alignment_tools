@@ -4,6 +4,7 @@
 
 # Load neccesary modules and packages
 import pandas as pd
+from pprint import pprint
 from functions import FileFunctions, FindPairsFunctions
 
 ff = FileFunctions()
@@ -28,29 +29,32 @@ experiment_names = sorted(filtered_df["Experiment Name"].unique())
 # find all centroid files in main_directory
 centroid_files = ff.find_files_with_string(main_directory, "centroid", ".shp")
 
+pointfive = {}
+one = {}
+two = {}
+four = {}
 
-#Lets start with autrochthonous experiments, first lets make a dictrionary which will eventually have experiment names for keys and a list of centroid files for values
-autoc = {}
+high = [pointfive, one, two, four]
+pprint(high)
 
-#get experiment names for autoc experiments
-autoc_df = filtered_df[filtered_df["Flood type"].isin(['A'])]
+#get experiment names for high experiments
+high_df = filtered_df[filtered_df["Flood type"].isin(['H'])]
 
-#fill autoc dict with experiment names
-for index, row in autoc_df.iterrows():
-    
-    autoc_centroid_files = [item for item in centroid_files if row["Experiment Name"] in item]
+pointfive_df = high_df[high_df["Forest Stand Density"].isin([0.5])]
+one_df = high_df[high_df["Forest Stand Density"].isin([1.0])]
+two_df = high_df[high_df["Forest Stand Density"].isin([2.0])]
+four_df = high_df[high_df["Forest Stand Density"].isin([4.0])]
 
-    autoc[row["Experiment Name"]] = autoc_centroid_files
+dataframes = [pointfive_df, one_df, two_df, four_df]
 
-pprint(autoc)
+#fill dictionaries dict with experiment names
+for indy, df in enumerate(dataframes):
+    #fill autoc dict with experiment names
+    for index, row in df.iterrows():
+        
+        related_centroid_files = [item for item in centroid_files if row["Experiment Name"] in item]
 
-#Now we have the files that we want to compare, so for each experiment lets comapre the pre and post positions
-for key, value in autoc.items():
-    for item in value:
-        if 'pre' in item:
-            pre = item
-        elif 'post' in item:
-            post = item
+        high[indy][row["Experiment Name"]] = related_centroid_files
 
-    median_direction, median_distance = fpf.find_median_offset_from_scans(pre, post)
-    print(key, ": ", median_distance)
+pprint(high)
+        
