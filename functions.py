@@ -52,9 +52,9 @@ class FileFunctions:
         basename = filename.split("_centroids")[0]
         exp = basename.split("_")[0] + "_" + basename.split("_")[1]
 
-        print(directory)
-        print("Basename: ", basename)
-        print("Experiment: ", exp)
+        #print(directory)
+        #print("Basename: ", basename)
+        #print("Experiment: ", exp)
 
         return directory, basename, exp
     
@@ -66,6 +66,37 @@ class FileFunctions:
                     files.append(os.path.join(dirpath, file))
         return files
     
+    def sort_scans_chronologically(self, file_list):
+        # Predefined order of scan types
+        scan_order = ["nowood", "wood", "remobilization", "pre", "post"]
+
+        # Function to extract sorting keys
+        def extract_sort_key(filepath):
+            # Get the filename without the path or extension
+            filename = os.path.basename(filepath)
+            filename = os.path.splitext(filename)[0]  # Remove the extension
+            
+            # Split the filename to extract parts
+            parts = filename.split('_')
+            date = parts[0]  # First part is the date
+            experiment = parts[1]  # Second part is the experiment (e.g., exp1)
+            scan_type = parts[2]  # Third part is the scan type
+            
+            # Extract date as an integer (for chronological ordering)
+            date_key = int(date)
+            
+            # Extract experiment number (e.g., exp1 -> 1)
+            exp_num = int(experiment.replace("exp", ""))
+            
+            # Extract scan type position from predefined order
+            scan_type_key = scan_order.index(scan_type)
+            
+            return (date_key, exp_num, scan_type_key)
+
+        # Sort the file list using the sorting key
+        sorted_file_list = sorted(file_list, key=extract_sort_key)
+
+        return sorted_file_list
 
 
     
@@ -239,10 +270,15 @@ class FindPairsFunctions:
         
         # Step 5: Compute the median distance
         median_distance = np.median(distances)
+
+        new_median_direction = float(median_angle)
+        new_median_distance = float(median_distance)
         
-        return median_angle, median_distance
+        return new_median_direction, new_median_distance
     
     def find_median_offset_from_scans(self, scan1, scan2):
+        print("Scan1: ", scan1)
+        print("Scan2: ", scan2)
         pairs = self.find_closest_pairs(scan1, scan2)
         offsets = self.calculate_offsets(pairs)
         true_offsets = self.select_true_offsets(offsets)
