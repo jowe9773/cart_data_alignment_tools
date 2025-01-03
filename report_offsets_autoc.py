@@ -13,6 +13,7 @@ fpf = FindPairsFunctions()
 
 # Select Summary File and Directory containing centroid files
 summary_file = ff.load_fn("Select a summary file with experiment metadata")
+output_directory = ff.load_dn("Choose an output directory")
 
 main_directory = ff.load_dn("Choose a directory with all of the centroid filed within it")
 
@@ -45,6 +46,15 @@ for index, row in autoc_df.iterrows():
 
 pprint(autoc)
 
+
+#add header row to output df
+headers = []
+headers.append("Experiment")
+headers.append("Pre-Post")
+
+output_df = pd.DataFrame(columns = headers)
+
+
 #Now we have the files that we want to compare, so for each experiment lets comapre the pre and post positions
 for key, value in autoc.items():
     for item in value:
@@ -55,3 +65,12 @@ for key, value in autoc.items():
 
     median_direction, median_distance = fpf.find_median_offset_from_scans(pre, post)
     print(key, ": ", median_distance)
+
+    experiment_output = [key, median_distance]
+    output_df = pd.concat([output_df, pd.DataFrame([experiment_output], columns = output_df.columns)], ignore_index=True)
+    print("Output DF: ", output_df)
+
+    output_filepath = output_directory + "/autochthonous_offsets.csv"
+
+    #export dataframe
+    output_df.to_csv(output_filepath, index = False)

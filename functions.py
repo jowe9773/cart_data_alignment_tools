@@ -279,10 +279,18 @@ class FindPairsFunctions:
     def find_median_offset_from_scans(self, scan1, scan2):
         print("Scan1: ", scan1)
         print("Scan2: ", scan2)
-        pairs = self.find_closest_pairs(scan1, scan2)
-        offsets = self.calculate_offsets(pairs)
-        true_offsets = self.select_true_offsets(offsets)
-        median_direction, median_distance = self.compute_median_direction_and_distance(true_offsets)
+
+        if scan1 == None or scan2 == None:
+            print("One or more scans are messed up. If you thiknk this is wrong check over your files. ")
+            median_direction = np.nan
+            median_distance = np.nan
+        
+        else:
+
+            pairs = self.find_closest_pairs(scan1, scan2)
+            offsets = self.calculate_offsets(pairs)
+            true_offsets = self.select_true_offsets(offsets)
+            median_direction, median_distance = self.compute_median_direction_and_distance(true_offsets)
 
         return median_direction, median_distance
     
