@@ -66,6 +66,53 @@ chronologial_scan_list = ff.sort_scans_chronologically(all_centroid_files)
 print("Chronological list of scans:")
 pprint(chronologial_scan_list)
 
+"""Autochthonous Scans"""
+autoc = {}
+
+#get experiment names for autoc experiments
+autoc_df = filtered_df[filtered_df["Flood type"].isin(['A'])]
+
+#fill autoc dict with experiment names
+for index, row in autoc_df.iterrows():
+    
+    autoc_centroid_files = [item for item in centroid_files if row["Experiment Name"] in item]
+
+    autoc[row["Experiment Name"]] = autoc_centroid_files
+
+pprint(autoc)
+
+#add header row to output df
+headers = []
+headers.append("Experiment")
+headers.append("Pre-Post")
+
+output_df = pd.DataFrame(columns = headers)
+
+
+#Now we have the files that we want to compare, so for each experiment lets comapre the pre and post positions
+for key, value in autoc.items():
+    for item in value:
+        if 'pre' in item:
+            pre = item
+        elif 'post' in item:
+            post = item
+
+    median_direction, median_distance = fpf.find_median_offset_from_scans(pre, post)
+    print(key, ": ", median_distance)
+
+    experiment_output = [key, median_distance]
+    output_df = pd.concat([output_df, pd.DataFrame([experiment_output], columns = output_df.columns)], ignore_index=True)
+    print("Output DF: ", output_df)
+
+output_filepath = output_directory + "/autochthonous_offsets.csv"
+#export dataframe
+output_df.to_csv(output_filepath, index = False)
+print("Autochthonous Offsets")
+pprint(output_df)
+
+
+
+
 """All high flood scans"""
 high = [{}, {}, {}, {}]
 
